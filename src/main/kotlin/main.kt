@@ -33,8 +33,8 @@ class DijkstraSearch(val area: Area) {
         val node2cost = mutableMapOf<Node, Int>()
             .apply { this[area.start] = 0 }
 
-        val worklist = PriorityQueue<NodeCosted>()
-            .apply { add(NodeCosted(0, area.start)) }
+        val worklist = PriorityQueue<NodeP>()
+            .apply { add(NodeP(0, area.start)) }
         while (true) {
             val target = worklist.poll()
             for (neighbor in area.neighbors(target.node)) {
@@ -45,7 +45,7 @@ class DijkstraSearch(val area: Area) {
                     if (neighbor == area.goal)
                         return node2cost // finish search
 
-                    val next = NodeCosted(cost, neighbor)
+                    val next = NodeP(cost, neighbor)
                     worklist.add(next)
                 }
             }
@@ -53,14 +53,14 @@ class DijkstraSearch(val area: Area) {
 
     }
 
-    class NodeCosted(val cost: Int, val node: Node) : Comparable<NodeCosted> {
-        override fun compareTo(other: NodeCosted): Int {
+    class NodeP(val cost: Int, val node: Node) : Comparable<NodeP> {
+        override fun compareTo(other: NodeP): Int {
             return cost - other.cost
         }
     }
 }
 
-class Path() {
+class Path {
     val nodes = mutableListOf<Node>()
     fun addNode(node: Node) {
         nodes.add(node)
