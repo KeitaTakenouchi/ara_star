@@ -5,15 +5,19 @@ fun main() {
     val area = Area(Node(0, 0), Node(0, 13))
     area.print()
 
-    val path = DijkstraSearch(area).execute()
-    area.addPath(path)
-    area.print()
+    DijkstraSearch(area).execute()
 }
 
 class DijkstraSearch(val area: Area) {
-    fun execute(): Path {
+    fun execute() {
         val node2cost = calcCost()
-        return resolvePath(node2cost)
+        if (node2cost == null) {
+            println("unreachable")
+            return
+        }
+        val path = resolvePath(node2cost)
+        area.addPath(path)
+        area.print()
     }
 
     private fun resolvePath(node2cost: Map<Node, Int>): Path {
@@ -29,13 +33,13 @@ class DijkstraSearch(val area: Area) {
         return path
     }
 
-    private fun calcCost(): Map<Node, Int> {
+    private fun calcCost(): Map<Node, Int>? {
         val node2cost = mutableMapOf<Node, Int>()
             .apply { this[area.start] = 0 }
 
         val worklist = PriorityQueue<NodeP>()
             .apply { add(NodeP(0, area.start)) }
-        while (true) {
+        while (worklist.isNotEmpty()) {
             val target = worklist.poll()
             for (neighbor in area.neighbors(target.node)) {
                 if (!node2cost.containsKey(neighbor)) {
@@ -50,7 +54,8 @@ class DijkstraSearch(val area: Area) {
                 }
             }
         }
-
+        // the goal is unreachable
+        return null
     }
 
     class NodeP(val cost: Int, val node: Node) : Comparable<NodeP> {
@@ -69,7 +74,7 @@ class Path {
 
 class Area(val start: Node, val goal: Node) {
     val states = arrayOf(
-        arrayOf(0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
+        arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
         arrayOf(0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0),
         arrayOf(0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0),
         arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0),
@@ -77,12 +82,12 @@ class Area(val start: Node, val goal: Node) {
         arrayOf(0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0),
         arrayOf(0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0),
         arrayOf(0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0),
-        arrayOf(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0),
+        arrayOf(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0),
         arrayOf(1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0),
         arrayOf(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0),
-        arrayOf(0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0),
+        arrayOf(0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0),
         arrayOf(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0),
-        arrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+        arrayOf(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0),
     )
 
     fun isValid(n: Node): Boolean {
