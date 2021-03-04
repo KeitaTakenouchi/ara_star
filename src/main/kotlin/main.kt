@@ -22,7 +22,7 @@ class DijkstraSearch(val area: Area) {
         while (target != area.start) {
             val next = area.neighbors(target)
                 .filter { node2cost.containsKey(it) }
-                .find { node2cost[it]!! == node2cost[target]!! - 1 }!!
+                .minByOrNull { node2cost[it]!! }!!
             target = next
             path.addNode(target)
         }
