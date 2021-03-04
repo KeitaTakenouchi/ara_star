@@ -10,23 +10,23 @@ fun main() {
 
 class DijkstraSearch(val area: Area) {
     fun execute() {
-        val node2cost = calcCost()
-        if (node2cost == null) {
+        val costs = calcCost()
+        if (costs == null) {
             println("unreachable")
             return
         }
-        val path = resolvePath(node2cost)
+        val path = resolvePath(costs)
         area.addPath(path)
         area.print()
     }
 
-    private fun resolvePath(node2cost: Map<Node, Int>): Path {
+    private fun resolvePath(costs: Map<Node, Int>): Path {
         val path = Path().apply { addNode(area.goal) }
         var target = area.goal
         while (target != area.start) {
             val next = area.neighbors(target)
-                .filter { node2cost.containsKey(it) }
-                .minByOrNull { node2cost[it]!! }!!
+                .filter { costs.containsKey(it) }
+                .minByOrNull { costs[it]!! }!!
             target = next
             path.addNode(target)
         }
