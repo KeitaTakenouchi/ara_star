@@ -1,15 +1,15 @@
 import java.util.*
 
 fun main() {
-    val area = Area(Node(0, 0), Node(13, 19))
-    area.print()
-
-    DijkstraSearch(area).execute()
+    val area = Area(Node(0, 0), Node(13, 19)).apply {
+        print()
+    }
+    Search(area).execute()
 }
 
-class DijkstraSearch(val area: Area) {
+class Search(val area: Area) {
     fun execute() {
-        val costs = calcCost()
+        val costs = dijkstraCost()
         if (costs == null) {
             println("unreachable")
             return
@@ -33,7 +33,7 @@ class DijkstraSearch(val area: Area) {
         return path
     }
 
-    private fun calcCost(): Map<Node, Int>? {
+    private fun dijkstraCost(): Map<Node, Int>? {
         val node2cost = mutableMapOf<Node, Int>()
             .apply { this[area.start] = 0 }
 
@@ -57,13 +57,14 @@ class DijkstraSearch(val area: Area) {
         // the goal is unreachable
         return null
     }
+}
 
-    class NodeP(val cost: Int, val node: Node) : Comparable<NodeP> {
-        override fun compareTo(other: NodeP): Int {
-            return cost - other.cost
-        }
+class NodeP(val cost: Int, val node: Node) : Comparable<NodeP> {
+    override fun compareTo(other: NodeP): Int {
+        return cost - other.cost
     }
 }
+
 
 class Path {
     val nodes = mutableListOf<Node>()
