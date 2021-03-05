@@ -1,4 +1,5 @@
 import java.util.*
+import kotlin.math.abs
 
 fun main() {
     val area = Area(Node(0, 0), Node(13, 19)).apply {
@@ -9,7 +10,8 @@ fun main() {
 
 class Search(val area: Area) {
     fun execute() {
-        val costs = dijkstraCost()
+        //val costs = dijkstraCost()
+        val costs = asterCost()
         if (costs == null) {
             println("unreachable")
             return
@@ -34,20 +36,20 @@ class Search(val area: Area) {
     }
 
     private fun dijkstraCost(): Map<Node, Int>? {
-        val node2cost = mutableMapOf<Node, Int>()
+        val costs = mutableMapOf<Node, Int>()
             .apply { this[area.start] = 0 }
 
         val worklist = PriorityQueue<NodeP>()
             .apply { add(NodeP(0, area.start)) }
         while (worklist.isNotEmpty()) {
-            val target = worklist.poll()
-            for (neighbor in area.neighbors(target.node)) {
-                if (!node2cost.containsKey(neighbor)) {
-                    val cost = target.cost + 1
-                    node2cost[neighbor] = cost
+            val target = worklist.poll().node
+            for (neighbor in area.neighbors(target)) {
+                if (!costs.containsKey(neighbor)) {
+                    val cost = costs[target]!! + 1
+                    costs[neighbor] = cost
 
                     if (neighbor == area.goal)
-                        return node2cost // finish search
+                        return costs // finish search
 
                     val next = NodeP(cost, neighbor)
                     worklist.add(next)
@@ -57,11 +59,47 @@ class Search(val area: Area) {
         // the goal is unreachable
         return null
     }
+
+    private fun asterCost(): Map<Node, Int>? {
+        val h = fun(n: Node): Double {
+            return n.dist(area.goal)
+        }
+
+        val costs = mutableMapOf<Node, Int>()
+            .apply { this[area.start] = 0 }
+        val worklist = PriorityQueue<NodeP>()
+            .apply { add(NodeP(h(area.start), area.start)) }
+        while (worklist.isNotEmpty()) {
+            val target = worklist.poll().node
+            for (neighbor in area.neighbors(target)) {
+                val cost = costs[target]!! + 1
+                if (costs[neighbor] == null || cost < costs[neighbor]!!) {
+                    costs[neighbor] = cost
+
+                    if (neighbor == area.goal)
+                        return costs // finish search
+
+                    val p = costs[neighbor]!! + h(neighbor)
+                    val next = NodeP(p, neighbor)
+                    worklist.add(next)
+                }
+            }
+        }
+        // the goal is unreachable
+        return null
+    }
 }
 
-class NodeP(val cost: Int, val node: Node) : Comparable<NodeP> {
+class NodeP(private val cost: Double, val node: Node) : Comparable<NodeP> {
+    constructor(cost: Int, node: Node) : this(cost.toDouble(), node)
+
     override fun compareTo(other: NodeP): Int {
-        return cost - other.cost
+        return when {
+            cost == other.cost -> 0
+            cost < other.cost -> -1
+            cost > other.cost -> 1
+            else -> throw  IllegalStateException("$cost <-> ${other.cost}")
+        }
     }
 }
 
@@ -165,6 +203,10 @@ data class Node(val i: Int, val j: Int) {
         return arrayOf(
             up(), left(), down(), right()
         )
+    }
+
+    fun dist(o: Node): Double {
+        return (abs(i - o.i) + abs(j - o.j)).toDouble()
     }
 
     fun up(): Node {
