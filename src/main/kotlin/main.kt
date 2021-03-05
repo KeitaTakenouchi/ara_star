@@ -1,8 +1,7 @@
 import java.util.*
 
 fun main() {
-
-    val area = Area(Node(0, 0), Node(0, 13))
+    val area = Area(Node(0, 0), Node(13, 19))
     area.print()
 
     DijkstraSearch(area).execute()
@@ -18,6 +17,7 @@ class DijkstraSearch(val area: Area) {
         val path = resolvePath(costs)
         area.addPath(path)
         area.print()
+        area.printCostAsNumpy(costs)
     }
 
     private fun resolvePath(costs: Map<Node, Int>): Path {
@@ -74,20 +74,20 @@ class Path {
 
 class Area(val start: Node, val goal: Node) {
     val states = arrayOf(
-        arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
-        arrayOf(0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0),
-        arrayOf(0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0),
-        arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0),
-        arrayOf(0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0),
-        arrayOf(0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0),
-        arrayOf(0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0),
-        arrayOf(0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0),
-        arrayOf(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0),
-        arrayOf(1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0),
-        arrayOf(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0),
-        arrayOf(0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0),
-        arrayOf(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0),
-        arrayOf(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0),
+        arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
+        arrayOf(0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0),
+        arrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0),
+        arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0),
+        arrayOf(0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0),
+        arrayOf(1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0),
+        arrayOf(0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0),
+        arrayOf(0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0),
+        arrayOf(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0),
+        arrayOf(1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0),
+        arrayOf(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0),
+        arrayOf(0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0),
+        arrayOf(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0),
+        arrayOf(0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     )
 
     fun isValid(n: Node): Boolean {
@@ -117,19 +117,45 @@ class Area(val start: Node, val goal: Node) {
         val sb = StringBuilder()
         sb.append("\n")
 
-        states.forEach { row ->
-            row.forEach { s ->
-                val c = when (s) {
-                    0 -> " ♢ "
-                    1 -> " ⚠ "
-                    2 -> " ☗ " // path
+        for (i in states.indices) {
+            for (j in states[i].indices) {
+                val s = states[i][j]
+                val c = when {
+                    Node(i, j) == start -> " S "
+                    Node(i, j) == goal -> " G "
+                    s == 0 -> "   "
+                    s == 1 -> " * "
+                    s == 2 -> " @ " // path
                     else -> throw IllegalStateException("unknown state $s")
                 }
+
                 sb.append(c)
             }
             sb.append("\n")
         }
         print(sb.toString())
+    }
+
+    fun costMatrix(costs: Map<Node, Int>): Array<Array<Int>> {
+        return states.mapIndexed { i, row ->
+            row.mapIndexed { j, _ ->
+                costs.getOrDefault(Node(i, j), -30)
+            }.toTypedArray()
+        }.toTypedArray()
+    }
+
+    fun printCostAsNumpy(costs: Map<Node, Int>) {
+        val sb = StringBuilder()
+        sb.append("\n")
+
+        val costMatrix = costMatrix(costs)
+        val m = costMatrix.joinToString(",\n") { row ->
+            val r = row.joinToString(",") { cost ->
+                cost.toString().padStart(3, ' ')
+            }
+            "\t[$r]"
+        }
+        print("data = np.array([\n$m]\n)")
     }
 }
 
