@@ -10,15 +10,13 @@ fun main() {
 
 class Search(val area: Area) {
     fun execute() {
-        //val costs = dijkstraCost()
-        val costs = asterCost()
+        val weight = 1.0
+        val costs = weightedAsterCost(weight)
         if (costs == null) {
             println("unreachable")
             return
         }
-        val path = resolvePath(costs)
-        area.addPath(path)
-        area.print()
+        area.print(resolvePath(costs))
         area.printCostAsNumpy(costs)
     }
 
@@ -35,64 +33,27 @@ class Search(val area: Area) {
         return path
     }
 
-    private fun dijkstraCost(): Map<Node, Int>? {
-        val costs = mutableMapOf<Node, Int>()
-            .apply { this[area.start] = 0 }
+    private fun weightedAsterCost(weight: Double): Map<Node, Int>? {
+        val h = { n: Node -> weight * n.dist(area.goal) }
 
-        val worklist = PriorityQueue<NodeP>()
-            .apply { add(NodeP(0, area.start)) }
-        while (worklist.isNotEmpty()) {
-            val target = worklist.poll().node
-            for (neighbor in area.neighbors(target)) {
-                if (!costs.containsKey(neighbor)) {
-                    val cost = costs[target]!! + 1
-                    costs[neighbor] = cost
-
-                    if (neighbor == area.goal)
-                        return costs // finish search
-
-                    val next = NodeP(cost, neighbor)
-                    worklist.add(next)
+        val costs = mutableMapOf<Node, Int>().apply { this[area.start] = 0 }
+        val queue = PriorityQueue<NodeP>().apply { add(NodeP(area.start, h(area.start))) }
+        while (queue.isNotEmpty()) {
+            val target = queue.poll().node
+            if (target == area.goal) return costs
+            for (n in area.neighbors(target)) {
+                val cost = costs[target]!! + target.dist(n)
+                if (costs[n] == null || cost < costs[n]!!) {
+                    costs[n] = cost
+                    queue.add(NodeP(n, costs[n]!! + h(n)))
                 }
             }
         }
-        // the goal is unreachable
-        return null
-    }
-
-    private fun asterCost(): Map<Node, Int>? {
-        val h = fun(n: Node): Double {
-            return n.dist(area.goal)
-        }
-
-        val costs = mutableMapOf<Node, Int>()
-            .apply { this[area.start] = 0 }
-        val worklist = PriorityQueue<NodeP>()
-            .apply { add(NodeP(h(area.start), area.start)) }
-        while (worklist.isNotEmpty()) {
-            val target = worklist.poll().node
-            for (neighbor in area.neighbors(target)) {
-                val cost = costs[target]!! + 1
-                if (costs[neighbor] == null || cost < costs[neighbor]!!) {
-                    costs[neighbor] = cost
-
-                    if (neighbor == area.goal)
-                        return costs // finish search
-
-                    val p = costs[neighbor]!! + h(neighbor)
-                    val next = NodeP(p, neighbor)
-                    worklist.add(next)
-                }
-            }
-        }
-        // the goal is unreachable
-        return null
+        return null // the goal is unreachable
     }
 }
 
-class NodeP(private val cost: Double, val node: Node) : Comparable<NodeP> {
-    constructor(cost: Int, node: Node) : this(cost.toDouble(), node)
-
+class NodeP(val node: Node, private val cost: Double) : Comparable<NodeP> {
     override fun compareTo(other: NodeP): Int {
         return when {
             cost == other.cost -> 0
@@ -102,7 +63,6 @@ class NodeP(private val cost: Double, val node: Node) : Comparable<NodeP> {
         }
     }
 }
-
 
 class Path {
     val nodes = mutableListOf<Node>()
@@ -116,7 +76,7 @@ class Area(val start: Node, val goal: Node) {
         arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
         arrayOf(0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0),
         arrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0),
-        arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0),
+        arrayOf(0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0),
         arrayOf(0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0),
         arrayOf(1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0),
         arrayOf(0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0),
@@ -146,13 +106,7 @@ class Area(val start: Node, val goal: Node) {
         return n.around().filter { isValid(it) && isEmpty(it) }
     }
 
-    fun addPath(path: Path) {
-        path.nodes.forEach {
-            states[it.i][it.j] = 2
-        }
-    }
-
-    fun print() {
+    fun print(path: Path = Path()) {
         val sb = StringBuilder()
         sb.append("\n")
 
@@ -162,9 +116,9 @@ class Area(val start: Node, val goal: Node) {
                 val c = when {
                     Node(i, j) == start -> " S "
                     Node(i, j) == goal -> " G "
+                    path.nodes.contains(Node(i, j)) -> " @ "
                     s == 0 -> "   "
                     s == 1 -> " * "
-                    s == 2 -> " @ " // path
                     else -> throw IllegalStateException("unknown state $s")
                 }
 
@@ -200,13 +154,12 @@ class Area(val start: Node, val goal: Node) {
 
 data class Node(val i: Int, val j: Int) {
     fun around(): Array<Node> {
-        return arrayOf(
-            up(), left(), down(), right()
-        )
+        return arrayOf(up(), left(), down(), right())
     }
 
-    fun dist(o: Node): Double {
-        return (abs(i - o.i) + abs(j - o.j)).toDouble()
+    // Manhattan distance
+    fun dist(o: Node): Int {
+        return abs(i - o.i) + abs(j - o.j)
     }
 
     fun up(): Node {
