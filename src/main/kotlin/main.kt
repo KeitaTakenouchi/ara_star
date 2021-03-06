@@ -16,7 +16,9 @@ class Search(val area: Area) {
             println("unreachable")
             return
         }
-        area.print(resolvePath(costs))
+        val path = resolvePath(costs)
+        area.print(path)
+        area.printPathAsNumpy(path)
         area.printCostAsNumpy(costs)
     }
 
@@ -137,18 +139,46 @@ class Area(val start: Node, val goal: Node) {
         }.toTypedArray()
     }
 
-    fun printCostAsNumpy(costs: Map<Node, Int>) {
-        val sb = StringBuilder()
-        sb.append("\n")
-
-        val costMatrix = costMatrix(costs)
-        val m = costMatrix.joinToString(",\n") { row ->
-            val r = row.joinToString(",") { cost ->
-                cost.toString().padStart(3, ' ')
+    fun printPathAsNumpy(path: Path) {
+        var i = 0
+        val m = states.joinToString(",\n") { _ ->
+            var j = 0
+            val r = states[i].joinToString(",") { _ ->
+                val s = states[i][j]
+                val str = when {
+                    Node(i, j) == start -> "  0"
+                    Node(i, j) == goal -> "  0"
+                    path.nodes.contains(Node(i, j)) -> " 30"
+                    s == 0 -> "-30"
+                    s == 1 -> " 60"
+                    else -> throw IllegalStateException("unknown state $s")
+                }
+                j++
+                str
             }
+            i++
             "\t[$r]"
         }
-        print("data = np.array([\n$m]\n)")
+        println("data = np.array([\n$m]\n)")
+    }
+
+    fun printCostAsNumpy(costs: Map<Node, Int>) {
+        val costMatrix = costMatrix(costs)
+        var i = 0
+        val m = states.joinToString(",\n") { _ ->
+            var j = 0
+            val r = states[i].joinToString(",") { _ ->
+                val str = when {
+                    states[i][j] == 1 -> "60"
+                    else -> costMatrix[i][j].toString().padStart(3, ' ')
+                }
+                j++
+                str
+            }
+            i++
+            "\t[$r]"
+        }
+        println("data = np.array([\n$m]\n)")
     }
 }
 
